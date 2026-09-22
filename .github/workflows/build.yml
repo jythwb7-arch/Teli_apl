@@ -13,7 +13,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Setup SDK
+      - name: Setup SDK & NDK
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           mkdir -p $ANDROID_HOME/cmdline-tools
@@ -21,21 +21,16 @@ jobs:
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-12266719_latest.zip -O tools.zip
           unzip -q tools.zip
           mv cmdline-tools latest
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;21.4.7075529"
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;21.4.7075529"
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-      - name: Set API Keys
-        run: |
-          echo "APP_ID=2040" >> TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java.tmp || true
-          sed -i "s/APP_ID = .*/APP_ID = 2040;/" TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
-          sed -i "s/APP_HASH = .*/APP_HASH = \"b18441a1ff607e10a989891a5462e627\";/" TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
-      - name: Build
+          echo "ANDROID_NDK_HOME=$HOME/android-sdk/ndk/21.4.7075529" >> $GITHUB_ENV
+      - name: Build APK
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleAfatStandaloneDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx4g"
+          ./gradlew TMessagesProj_App:assembleAfatDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: Teli-Premium-APK
-          path: TMessagesProj_AppStandalone/build/outputs/apk/**/debug/*.apk
+          path: TMessagesProj_App/build/outputs/apk/afat/debug/*.apk
